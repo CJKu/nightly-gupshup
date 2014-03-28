@@ -56,8 +56,6 @@ function appendUser(user) {
     return;
 
   users.push(user);
-  console.log("appendUser: user = " + user + "users.length = " + users.length);
-  
 
   var d = document.createElement("div");
   d.setAttribute("id", btoa(user));
@@ -91,6 +89,7 @@ function acceptCall(offer) {
   log("Incoming call with offer " + offer);
   document.getElementById("main").style.display = "none";
   document.getElementById("call").style.display = "block";
+  document.getElementById("call-control").style.display = "block";
 
   navigator.mozGetUserMedia({video:true, audio:true}, function(stream) {
     document.getElementById("localvideo").mozSrcObject = stream;
@@ -103,7 +102,7 @@ function acceptCall(offer) {
     pc.onaddstream = function(obj) {
       document.getElementById("remotevideo").mozSrcObject = obj.stream;
       document.getElementById("remotevideo").play();
-      document.getElementById("dialing").style.display = "none";
+      //document.getElementById("dialing").style.display = "none";
       document.getElementById("hangup").style.display = "block";
     };
 
@@ -131,6 +130,7 @@ function acceptCall(offer) {
 function initiateCall(user) {
   document.getElementById("main").style.display = "none";
   document.getElementById("call").style.display = "block";
+  document.getElementById("call-control").style.display = "block";
 
   navigator.mozGetUserMedia({video:true, audio:true}, function(stream) {
     document.getElementById("localvideo").mozSrcObject = stream;
@@ -170,6 +170,7 @@ function initiateCall(user) {
 function endCall() {
   log("Ending call");
   document.getElementById("call").style.display = "none";
+  document.getElementById("call-control").style.display = "none";
   document.getElementById("main").style.display = "block";
 
   document.getElementById("localvideo").mozSrcObject.stop();
@@ -188,6 +189,41 @@ function error(e) {
   }
   endCall();
 }
+
+var localView         = document.getElementById('local-view');
+var remoteView        = document.getElementById('remote-view');
+var endCallButton     = document.getElementById('btn-endCall');
+var muteButton        = document.getElementById('btn-mute');
+
+
+// Switch focus from/to local view to/from remote view.
+function switchViews() {
+  if (localView.classList.contains('scaleDown')) {
+    // Scale down remoteView and move it front
+    remoteView.style.zIndex = 1;
+    remoteView.classList.remove('scaleUp');
+    remoteView.classList.add('scaleDown');
+
+    // Scale up localview and move it back
+    localView.style.zIndex = 0;
+    localView.classList.remove('scaleDown');
+    localView.classList.add('scaleUp');
+  }
+  else {
+    // Scale down localView and move it front
+    localView.style.zIndex = 1;
+    localView.classList.remove('scaleUp');
+    localView.classList.add('scaleDown');
+
+    // Scale up remoteView and move it back
+    remoteView.style.zIndex = 0;
+    remoteView.classList.remove('scaleDown');
+    remoteView.classList.add('scaleUp');
+  }
+}
+
+localView.onclick = switchViews;
+remoteView.onclick = switchViews;
 
 var users = [];
 users.push(document.getElementById("user").innerHTML);

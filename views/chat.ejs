@@ -8,6 +8,85 @@
     <meta name="description" content="A WebRTC Demo">
     <meta name="author" content="Anant Narayanan">
     <link href="css/bootstrap.css" rel="stylesheet">
+    <style>
+    #call{
+      /* Fit screen */
+      height: 100vh;
+      width: 100%;
+    }
+
+    #remote-view
+    {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      max-height:100%;max-width:100%;
+      border: 1px solid gray;
+      background-color: black;
+      transform-origin: 0% 0%;
+    }
+
+    #local-view
+    {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      max-height:100%;max-width:100%;
+      border: 1px solid black;
+      background-color: gray;
+      transform-origin:100% 100%;
+      transform: scale(0.3, 0.3);
+    }
+
+    #call-control 
+    {
+      width: 100%;
+      height: 50px;
+    }
+
+    #local-view.scaleDown, #remote-view.scaleDown {
+      transition: 1s ease;
+      transform: scale(0.3, 0.3);
+    }
+
+    #local-view.scaleUp, #remote-view.scaleUp {
+      transition: 1s ease;
+      transform: scale(1, 1);
+    }
+
+    video 
+    {
+      position: absolute;
+      width:auto;
+      height:auto;
+      max-height:100%;
+      max-width:100%;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    #btn-endCall 
+    {
+      display: inline;
+    }
+
+    #btn-mute 
+    {
+      display: inline;
+    }
+
+    p.view-title 
+    {
+      font-size: large;
+      color: white;
+      text-shadow: 2px 2px black;
+      position: absolute;
+      top: 0%;
+      left: 50%;
+      transform: translateX(-50%)
+    }
+
+    </style>
     <!-- For IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -33,9 +112,11 @@
 
       <br/>
 
+      <!-- User List -->
       <div class="span2 well" id="users">
       </div>
 
+      <!-- Incoming call modal dialog -->
       <div class="modal" id="incomingCall" tabindex="-1" role="dialog"
            aria-labelledby="incomingCall" aria-hidden="true">
         <div class="modal-header">
@@ -43,7 +124,7 @@
           <h3>Incoming Call</h3>
         </div>
         <div class="modal-body">
-          <img src="img/incoming.png"/><br/><p>&nbsp;</p>
+          <!--<img src="img/incoming.png"/><br/><p>&nbsp;</p>-->
           <p>You have an incoming call from <span id="incomingUser"></span></p>
           <audio id="incomingRing" src="http://localhost/ring.ogg" loop/>
         </div>
@@ -52,28 +133,26 @@
           <button id="incomingAccept" class="btn btn-primary">Accept</button>
         </div>
       </div>
-
     </div>
+    
+    <!-- Call controllers -->
+    <div id="call-control" class="container" style="display: none;">
+      <a class="btn btn-danger" onclick="endCall();">Hang Up</a>
+      <a class="btn btn-default">Mute</a>
+    </div>    
 
+    <!-- Remove/Local Views -->
     <div id="call" class="container" style="display: none;">
-      <span id="dialing">
-        <img src="img/loading.gif"/>
-        <b>Dialing...</b>
-      </span>
-      <span id="hangup" style="display: none;">
-        <a class="btn btn-danger" onclick="endCall();">Hang Up</a>
-      </span>
-      <span>
-        <h3>Remote</h3>
-        <video width="640" height="480" id="remotevideo" controls/>
-      </span>
-      <span>
-        <h3>Local</h3>
-        <video width="320" height="240" id="localvideo" controls/>
-      </span>
+      <div class="container" id="remote-view">
+        <video id="remotevideo"/>
+      </div>
+      <div class="container" id="local-view">
+        <video id="localvideo"/>
+      </div>
     </div>
-
-    <div class="container">
+    
+    <!-- Debugging window -->
+    <div class="container" style="display: block;">
       <button type="button" class="btn btn-warning" data-toggle="collapse"
         data-target="#debug">Hide Debug</button>
       <br/>
