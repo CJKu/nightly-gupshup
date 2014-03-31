@@ -96,6 +96,9 @@ function acceptCall(offer) {
     document.getElementById("localvideo").play();
     document.getElementById("localvideo").muted = true;
 
+    muteVideoButton.className = (0 == stream.getVideoTracks().length) ? "btn btn-default" : "btn btn-danger";
+    muteAudioButton.className = (0 == stream.getAudioTracks().length) ? "btn btn-default" : "btn btn-danger";
+
     var pc = new mozRTCPeerConnection();
     pc.addStream(stream);
 
@@ -103,8 +106,12 @@ function acceptCall(offer) {
       document.getElementById("remotevideo").mozSrcObject = obj.stream;
       document.getElementById("remotevideo").play();
       //document.getElementById("dialing").style.display = "none";
-      document.getElementById("hangup").style.display = "block";
+      //document.getElementById("hangup").style.display = "block";
     };
+
+    pc.onsignalingstatechange = function(obj) {
+      console.log("onsignalingstatechange triggered");
+    }
 
     pc.setRemoteDescription(new mozRTCSessionDescription(JSON.parse(offer.offer)), function() {
       log("setRemoteDescription, creating answer");
@@ -137,6 +144,9 @@ function initiateCall(user) {
     document.getElementById("localvideo").play();
     document.getElementById("localvideo").muted = true;
 
+    muteVideoButton.className = (0 == stream.getVideoTracks().length) ? "btn btn-default" : "btn btn-danger";
+    muteAudioButton.className = (0 == stream.getAudioTracks().length) ? "btn btn-default" : "btn btn-danger";
+
     var pc = new mozRTCPeerConnection();
     pc.addStream(stream);
 
@@ -144,9 +154,13 @@ function initiateCall(user) {
       log("Got onaddstream of type " + obj.type);
       document.getElementById("remotevideo").mozSrcObject = obj.stream;
       document.getElementById("remotevideo").play();
-      document.getElementById("dialing").style.display = "none";
-      document.getElementById("hangup").style.display = "block";
+      //document.getElementById("dialing").style.display = "none";
+      //document.getElementById("hangup").style.display = "block";
     };
+
+    pc.onsignalingstatechange = function(obj) {
+      console.log("onsignalingstatechange triggered");
+    }
 
     pc.createOffer(function(offer) {
       log("Created offer" + JSON.stringify(offer));
@@ -192,9 +206,8 @@ function error(e) {
 
 var localView         = document.getElementById('local-view');
 var remoteView        = document.getElementById('remote-view');
-var endCallButton     = document.getElementById('btn-endCall');
-var muteButton        = document.getElementById('btn-mute');
-
+var muteAudioButton   = document.getElementById('btn-audio-mute');
+var muteVideoButton   = document.getElementById('btn-video-mute');
 
 // Switch focus from/to local view to/from remote view.
 function switchViews() {
@@ -224,6 +237,30 @@ function switchViews() {
 
 localView.onclick = switchViews;
 remoteView.onclick = switchViews;
+
+muteAudioButton.onclick = function () {
+  var stream = document.getElementById("localvideo").mozSrcObject;
+
+  if (stream) {
+    var audiotrack = stream.getAudioTracks()[0];
+    if (audiotrack) {
+      muteAudioButton.className = audiotrack.enabled ? "btn btn-default" : "btn btn-danger"
+      audiotrack.enabled = audiotrack.enabled ? false : true;
+    }
+  }
+}
+
+muteVideoButton.onclick = function () {
+  var stream = document.getElementById("localvideo").mozSrcObject;
+
+  if (stream) {
+    var videotrack = stream.getVideoTracks()[0];
+    if (videotrack) {
+      muteVideoButton.className = videotrack.enabled ? "btn btn-default" : "btn btn-danger"
+      videotrack.enabled = videotrack.enabled ? false : true;
+    }
+  }
+}
 
 var users = [];
 users.push(document.getElementById("user").innerHTML);

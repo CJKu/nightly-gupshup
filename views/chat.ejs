@@ -65,12 +65,7 @@
       transform: translateY(-50%);
     }
 
-    #btn-endCall 
-    {
-      display: inline;
-    }
-
-    #btn-mute 
+    .btn-danger
     {
       display: inline;
     }
@@ -138,7 +133,8 @@
     <!-- Call controllers -->
     <div id="call-control" class="container" style="display: none;">
       <a class="btn btn-danger" onclick="endCall();">Hang Up</a>
-      <a class="btn btn-default">Mute</a>
+      <a class="btn btn-danger" id="btn-audio-mute">Mute Audio</a>
+      <a class="btn btn-danger" id="btn-video-mute">Mute Video</a>
     </div>    
 
     <!-- Remove/Local Views -->
