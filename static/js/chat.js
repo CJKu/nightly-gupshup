@@ -44,9 +44,23 @@ source.addEventListener("answer", function(e) {
   }, error);
 }, false);
 
+function error(e) {
+  if (typeof e == typeof {}) {
+    alert("Oh no! " + JSON.stringify(e));
+  } else {
+    alert("Oh no! " + e);
+  }
+  endCall();
+}
+
 function log(info) {
   var d = document.getElementById("debug");
   d.innerHTML += info + "\n\n";
+}
+
+function clearLog() {
+  var d = document.getElementById("debug");
+  d.innerHTML = "";
 }
 
 function appendUser(user) {
@@ -84,17 +98,30 @@ function removeUser(user) {
   }
 }
 
+function changeUIState(calling) {
+  if (calling) {
+    // clear debugging log of previous call
+    clearLog();
+
+    document.getElementById("main").style.display = "none";
+    document.getElementById("call").style.display = "block";
+    document.getElementById("call-control").style.display = "block";
+  }
+  else {
+    document.getElementById("call-control").style.display = "none";
+    document.getElementById("call").style.display = "none";
+    document.getElementById("main").style.display = "block";
+  }
+}
+
 function createPeerConnection(caller, obj) {
   //  Update UI accordingly
-  document.getElementById("main").style.display = "none";
-  document.getElementById("call").style.display = "block";
-  document.getElementById("call-control").style.display = "block";
+  changeUIState(true);
 
   navigator.mozGetUserMedia({video:true, audio:true}, function(stream) {
     //  Display local video.
     document.getElementById("localvideo").mozSrcObject = stream;
     document.getElementById("localvideo").play();
-    document.getElementById("localvideo").muted = true;
 
     muteVideoButton.className = (0 == stream.getVideoTracks().length) ? "btn btn-default" : "btn btn-danger";
     muteAudioButton.className = (0 == stream.getAudioTracks().length) ? "btn btn-default" : "btn btn-danger";
@@ -110,8 +137,14 @@ function createPeerConnection(caller, obj) {
       //document.getElementById("hangup").style.display = "block";
     };
 
+    // T.T no statechnage after pc.close
     pc.onsignalingstatechange = function(obj) {
       console.log("onsignalingstatechange triggered");
+    }
+
+    // T.T no remove stream callback after pc.removeStream
+    pc.onremovestream = function(obj) {
+      console.log("onremovestream triggered");
     }
 
     // Make a call
@@ -134,7 +167,7 @@ function createPeerConnection(caller, obj) {
         }, error);
       }, error);
     }
-    // accept a call
+    // Or, accept a call
     else {
       var offer = obj;
       pc.setRemoteDescription(new mozRTCSessionDescription(JSON.parse(offer.offer)), function() {
@@ -170,25 +203,24 @@ function initiateCall(user) {
 
 function endCall() {
   log("Ending call");
-  document.getElementById("call").style.display = "none";
-  document.getElementById("call-control").style.display = "none";
-  document.getElementById("main").style.display = "block";
+
+  // Try to remove stream before close peer connection. Testing code.
+  /*var localStream = document.getElementById("localvideo").mozSrcObject;
+  if (localStream) {
+    localStream.stop();
+    peerc.removeStream(localStream);
+  }*/
 
   document.getElementById("localvideo").mozSrcObject.stop();
   document.getElementById("localvideo").mozSrcObject = null;
   document.getElementById("remotevideo").mozSrcObject = null;
 
+  // Close peer connection
   peerc.close();
   peerc = null;
-}
 
-function error(e) {
-  if (typeof e == typeof {}) {
-    alert("Oh no! " + JSON.stringify(e));
-  } else {
-    alert("Oh no! " + e);
-  }
-  endCall();
+  // Update UI.
+  changeUIState(false);
 }
 
 var localView         = document.getElementById('local-view');
