@@ -84,14 +84,14 @@ function removeUser(user) {
   }
 }
 
-// TODO: refactor, this function is almost identical to initiateCall().
-function acceptCall(offer) {
-  log("Incoming call with offer " + offer);
+function createPeerConnection(caller, obj) {
+  //  Update UI accordingly
   document.getElementById("main").style.display = "none";
   document.getElementById("call").style.display = "block";
   document.getElementById("call-control").style.display = "block";
 
   navigator.mozGetUserMedia({video:true, audio:true}, function(stream) {
+    //  Display local video.
     document.getElementById("localvideo").mozSrcObject = stream;
     document.getElementById("localvideo").play();
     document.getElementById("localvideo").muted = true;
@@ -99,6 +99,7 @@ function acceptCall(offer) {
     muteVideoButton.className = (0 == stream.getVideoTracks().length) ? "btn btn-default" : "btn btn-danger";
     muteAudioButton.className = (0 == stream.getAudioTracks().length) ? "btn btn-default" : "btn btn-danger";
 
+    // Create and setup peerConnection.
     var pc = new mozRTCPeerConnection();
     pc.addStream(stream);
 
@@ -113,72 +114,58 @@ function acceptCall(offer) {
       console.log("onsignalingstatechange triggered");
     }
 
-    pc.setRemoteDescription(new mozRTCSessionDescription(JSON.parse(offer.offer)), function() {
-      log("setRemoteDescription, creating answer");
-      pc.createAnswer(function(answer) {
-        pc.setLocalDescription(answer, function() {
-          // Send answer to remote end.
-          log("created Answer and setLocalDescription " + JSON.stringify(answer));
+    // Make a call
+    if (caller) {
+      var user = obj;
+      pc.createOffer(function(offer) {
+        log("Created offer" + JSON.stringify(offer));
+        pc.setLocalDescription(offer, function() {
+          // Send offer to remote end.
+          log("setLocalDescription, sending to remote");
           peerc = pc;
           jQuery.post(
-            "answer", {
-              to: offer.from,
-              from: offer.to,
-              answer: JSON.stringify(answer)
+            "offer", {
+              to: user,
+              from: document.getElementById("user").innerHTML,
+              offer: JSON.stringify(offer)
             },
-            function() { console.log("Answer sent!"); }
+            function() { console.log("Offer sent!"); }
           ).error(error);
         }, error);
       }, error);
-    }, error);
+    }
+    // accept a call
+    else {
+      var offer = obj;
+      pc.setRemoteDescription(new mozRTCSessionDescription(JSON.parse(offer.offer)), function() {
+        log("setRemoteDescription, creating answer");
+        pc.createAnswer(function(answer) {
+          pc.setLocalDescription(answer, function() {
+            // Send answer to remote end.
+            log("created Answer and setLocalDescription " + JSON.stringify(answer));
+            peerc = pc;
+            jQuery.post(
+              "answer", {
+                to: offer.from,
+                from: offer.to,
+                answer: JSON.stringify(answer)
+              },
+              function() { console.log("Answer sent!"); }
+            ).error(error);
+          }, error);
+        }, error);
+      }, error);
+    }
   }, error);
 }
 
+function acceptCall(offer) {
+  log("Incoming call with offer " + offer);
+  createPeerConnection(false, offer);
+}
+
 function initiateCall(user) {
-  document.getElementById("main").style.display = "none";
-  document.getElementById("call").style.display = "block";
-  document.getElementById("call-control").style.display = "block";
-
-  navigator.mozGetUserMedia({video:true, audio:true}, function(stream) {
-    document.getElementById("localvideo").mozSrcObject = stream;
-    document.getElementById("localvideo").play();
-    document.getElementById("localvideo").muted = true;
-
-    muteVideoButton.className = (0 == stream.getVideoTracks().length) ? "btn btn-default" : "btn btn-danger";
-    muteAudioButton.className = (0 == stream.getAudioTracks().length) ? "btn btn-default" : "btn btn-danger";
-
-    var pc = new mozRTCPeerConnection();
-    pc.addStream(stream);
-
-    pc.onaddstream = function(obj) {
-      log("Got onaddstream of type " + obj.type);
-      document.getElementById("remotevideo").mozSrcObject = obj.stream;
-      document.getElementById("remotevideo").play();
-      //document.getElementById("dialing").style.display = "none";
-      //document.getElementById("hangup").style.display = "block";
-    };
-
-    pc.onsignalingstatechange = function(obj) {
-      console.log("onsignalingstatechange triggered");
-    }
-
-    pc.createOffer(function(offer) {
-      log("Created offer" + JSON.stringify(offer));
-      pc.setLocalDescription(offer, function() {
-        // Send offer to remote end.
-        log("setLocalDescription, sending to remote");
-        peerc = pc;
-        jQuery.post(
-          "offer", {
-            to: user,
-            from: document.getElementById("user").innerHTML,
-            offer: JSON.stringify(offer)
-          },
-          function() { console.log("Offer sent!"); }
-        ).error(error);
-      }, error);
-    }, error);
-  }, error);
+  createPeerConnection(true, user);
 }
 
 function endCall() {
