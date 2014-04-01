@@ -135,6 +135,8 @@
       <a class="btn btn-danger" onclick="endCall();">Hang Up</a>
       <a class="btn btn-danger" id="btn-audio-mute">Mute Audio</a>
       <a class="btn btn-danger" id="btn-video-mute">Mute Video</a>
+      
+      
     </div>    
 
     <!-- Remove/Local Views -->
@@ -147,6 +149,13 @@
       </div>
     </div>
     
+    <!-- DataChannel message -->
+    <div id="dataChannel"class="container" style="display: none;">
+      <pre id="dataChannelReceive" class="collapse in"></pre>
+      <textarea id="dataChannelSend"></textarea>
+      <a class="btn btn-default" id="btn-send-data" onclick="sendData()" style="display: inline;">Send Data</a>
+    </div>
+
     <!-- Debugging window -->
     <div class="container" style="display: block;">
       <button type="button" class="btn btn-warning" data-toggle="collapse"

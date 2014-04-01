@@ -7,6 +7,8 @@ if (!console || !console.log) {
 
 // Ugh, globals.
 var peerc;
+var localdc;
+var remotedc;
 var source = new EventSource("events");
 
 $("#incomingCall").modal();
@@ -106,12 +108,56 @@ function changeUIState(calling) {
     document.getElementById("main").style.display = "none";
     document.getElementById("call").style.display = "block";
     document.getElementById("call-control").style.display = "block";
+    document.getElementById("dataChannel").style.display = "block";
   }
   else {
+    document.getElementById("dataChannel").style.display = "none";
     document.getElementById("call-control").style.display = "none";
     document.getElementById("call").style.display = "none";
     document.getElementById("main").style.display = "block";
   }
+}
+
+function handleLocalChannelStateChange() {
+  var readyState = localdc.readyState;
+  console.log("handleLocalChannelStateChange: readyState = " + readyState);
+
+  if (readyState == "close")
+    localdc = null;
+}
+
+function handleRemoteChannelStateChange() {
+  var readyState = remotedc.readyState;
+  if (readyState == "close")
+    remotedc = null;
+
+  console.log("handleRemoteChannelStateChange: readyState = " + readyState);
+}
+
+function sendData() {
+  var data = document.getElementById("dataChannelSend").value;
+
+  var messageBox = document.getElementById("dataChannelReceive");
+  var p = document.createElement("p");
+  p.align = "right";
+  p.innerHTML = data;
+  messageBox.appendChild(p);
+
+  localdc.send(data);
+  document.getElementById("dataChannelSend").value = "";
+}
+
+function handleMessage(event) {
+  var messageBox = document.getElementById("dataChannelReceive");
+  
+  var p = document.createElement("p");
+  p.align = "left";
+  p.innerHTML = event.data;
+  messageBox.appendChild(p);
+
+ // messageBox.value += event.data;
+
+  console.log("handleMessage: message = " + event.data);
 }
 
 function createPeerConnection(caller, obj) {
@@ -137,15 +183,22 @@ function createPeerConnection(caller, obj) {
       //document.getElementById("hangup").style.display = "block";
     };
 
+    pc.ondatachannel = function (event) {
+      remotedc = event.channel;
+      remotedc.onmessage = handleMessage;
+      remotedc.onopen = handleRemoteChannelStateChange;
+      remotedc.onclose = handleRemoteChannelStateChange;
+    }
+
     // T.T no statechnage after pc.close
     pc.onsignalingstatechange = function(obj) {
       console.log("onsignalingstatechange triggered");
     }
 
-    // T.T no remove stream callback after pc.removeStream
-    pc.onremovestream = function(obj) {
-      console.log("onremovestream triggered");
-    }
+    // Create data channel
+    localdc = pc.createDataChannel(users[0]);
+    localdc.onopen = handleLocalChannelStateChange;
+    localdc.onclose = handleLocalChannelStateChange;
 
     // Make a call
     if (caller) {
